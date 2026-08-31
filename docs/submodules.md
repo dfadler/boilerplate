@@ -21,6 +21,62 @@ workspace glob) to be picked up by pnpm/Turborepo — same requirement as any ot
 package. If the upstream repo doesn't already have one, that's a sign it isn't
 actually ready to be a workspace package yet.
 
+## Change direction: submodules are pins, not edit targets
+
+**Policy:** changes flow one way — from each submodule's own upstream repo into
+this one. This repo never edits a submodule in place and treats that edit as the
+record of the change. If a fix surfaces while working here, it gets made (and
+reviewed, and merged) in the submodule's own repo first; only then does the pin
+here get bumped to point at it.
+
+**Why:** a submodule checkout under `packages/<name>` or `tooling/<name>` is a
+full, independent git repo — nothing stops you from committing directly inside it.
+Combined with `git submodule update --remote`'s default of checking out on a
+**detached HEAD** (see below), it's easy to end up with a commit that only exists
+in this repo's local `.git/modules/<name>` and was never pushed anywhere. If that
+local checkout is ever lost — a fresh clone, a wiped worktree — the pin here points
+at a SHA no remote has, and the commit is gone for good. Editing in place also cuts
+against the reason these are submodules at all: each one is meant to be an
+independently-maintained repo (see the intro above), and an edit that only exists
+inside this repo's checkout of it isn't that.
+
+**How to apply:**
+
+- **Pulling an upstream change in** (the common case):
+
+  ```bash
+  cd packages/<name>
+  git fetch origin && git checkout main && git pull
+  cd ../..
+  git add packages/<name>
+  git commit -m "Bump <name> to <sha>"
+  ```
+
+  Or the one-liner equivalent, `git submodule update --remote packages/<name>`.
+  Note it leaves the submodule on a **detached HEAD** by default — fine for just
+  bumping the pin, but if you're about to make further edits inside it, run
+  `git checkout main` there first (or use `--remote --merge`, which keeps `HEAD`
+  attached to the tracked branch instead of detaching it).
+
+- **A fix discovered while working here**: this repo's checkout of `packages/<name>`
+  is a real clone of that same repo, so you can `cd` in and push straight to it (or
+  open a PR there) if you have access — follow *that* repo's own conventions (review,
+  CI, etc.), get it merged upstream, then bump the pin here the same way as above.
+
+- **The one rule that actually matters**: never bump a pin (`git add packages/<name>`)
+  to a commit that isn't pushed to that submodule's own remote yet. That's the
+  specific thing that prevents the orphaned-commit failure mode above — not "never
+  edit," which git can't enforce anyway.
+
+**Not enforced automatically.** A CI check could verify every submodule pin changed
+in a PR is actually reachable from that submodule's remote — an ancestor check
+(`git merge-base --is-ancestor <pinned-sha> <remote-branch>`, after a full,
+non-shallow fetch), not a naive `git ls-remote | grep <sha>` (which only matches
+current branch tips and would false-positive-block a commit that's since been
+merged past on the upstream branch). Worth adding if this policy actually gets
+violated in practice; skipped for now as more moving parts than the failure mode
+has earned for a single-maintainer repo so far.
+
 ## Cloning / updating this repo
 
 ```bash
