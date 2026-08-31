@@ -34,3 +34,14 @@ script). At that point the live options are:
 Either way, the opt-in-submodule-per-package convention in
 [`submodules.md`](./submodules.md) doesn't change — this is purely about how tasks
 get *run*, not how packages get *attached*.
+
+## Update: the trigger condition already fired once
+
+`tooling/agent-config` (Shell/Python, no `package.json`) is the first non-JS
+submodule in this repo. It didn't require revisiting the runner, because it doesn't
+need a task pipeline at all — nothing in this repo runs `build`/`test`/etc. against
+it, so it's vendored under `tooling/` (outside `packages/*`, outside the pnpm/
+Turborepo graph entirely) rather than shimmed with a fake `package.json`. That's a
+narrower case than what this doc originally anticipated: a non-JS package that
+*does* need tasks orchestrated alongside the JS/TS packages. The shim-vs-runner-
+migration decision above still applies whenever that actually happens.

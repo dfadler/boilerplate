@@ -10,6 +10,12 @@ package, when a package needs its own independently-maintained repo.
 - [`docs/roadmap.md`](docs/roadmap.md) — what changes if/when a non-JS package
   needs to be added
 
+## Packages
+
+- [`packages/issue-bot`](https://github.com/dfadler/issue-bot) — GitHub Action, TypeScript
+- [`packages/payload-plugin-mermaid`](https://github.com/dfadler/payload-plugin-mermaid) — Payload CMS plugin, TypeScript
+- [`tooling/agent-config`](https://github.com/dfadler/agent-config) — Claude Code agent config, Shell/Python (vendored only, not a workspace package — see [`tooling/README.md`](tooling/README.md))
+
 ## Quick start
 
 ```bash

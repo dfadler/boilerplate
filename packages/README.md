@@ -14,5 +14,12 @@ independently-versioned, independently-shared, or independently-maintained repo.
 Otherwise keep it as a plain directory — that's simpler to work with and has no
 extra caveats.
 
-`example-lib` is a minimal plain package proving the workspace + Turborepo wiring
-works end to end (`pnpm install && pnpm build`).
+Every package here must have a `package.json` with `build`/`lint`/`test`/`typecheck`
+scripts (stub any that don't apply) — that's what makes it a valid Turborepo package.
+A submodule with no `package.json` (config, tooling, non-JS) doesn't belong under
+`packages/*` at all — see [`tooling/`](../tooling/) instead.
+
+## Current packages
+
+- **[`issue-bot`](issue-bot)** — submodule, [github.com/dfadler/issue-bot](https://github.com/dfadler/issue-bot)
+- **[`payload-plugin-mermaid`](payload-plugin-mermaid)** — submodule, [github.com/dfadler/payload-plugin-mermaid](https://github.com/dfadler/payload-plugin-mermaid)
