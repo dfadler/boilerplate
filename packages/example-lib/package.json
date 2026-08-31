@@ -1,0 +1,17 @@
+{
+  "name": "@boilerplate/example-lib",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo \"no linter configured yet for example-lib\"",
+    "test": "echo \"no tests configured yet for example-lib\""
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}
