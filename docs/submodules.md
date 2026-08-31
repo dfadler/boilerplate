@@ -65,4 +65,37 @@ Turborepo's own docs don't mention submodules at all, in either direction.
 **Until it's actually exercised against a submodule package in this repo, treat
 `turbo prune` as untested here** — don't wire it into CI for a submodule-containing
 filter without first confirming it works against the current Turborepo version.
-Plain `turbo run build`/`lint`/`test`/`typecheck` are fine.
+Plain `turbo run build`/`lint`/`test`/`typecheck` are fine — verified end to end
+against `packages/issue-bot` and `packages/payload-plugin-mermaid` (real submodule
+packages, Turborepo 2.10.12), including a local cache hit on rerun.
+
+## Non-package submodules (config, tooling)
+
+Not every submodule is a buildable JS/TS package. A submodule with no
+`package.json` — Shell, Python, Make-driven tooling, etc. — doesn't belong under
+`packages/*`: pnpm/Turborepo would simply never discover it there, and it clutters
+a directory that's supposed to mean "workspace package." Attach it under
+[`tooling/`](../tooling/) instead — same submodule mechanics, just outside the
+workspace glob so it's vendored (version-pinned, reachable) without being pulled
+into any task pipeline. `tooling/agent-config` is the current example.
+
+## Gotcha: local task runs dirty the submodule's own working tree
+
+Running `pnpm build`/`lint`/`test`/`typecheck` generates build output (`dist/`,
+`.turbo/`, `node_modules/`) *inside* each submodule's own working tree, which git
+sees as uncommitted changes to that submodule (`git status` on the outer repo shows
+it as modified content, e.g. `Am packages/issue-bot`). This is more than cosmetic
+for a package that commits its build output (`issue-bot` does — it's a GitHub
+Action, and `action.yml` points at a committed `dist/`): a local rebuild can leave
+`dist/` genuinely different from what's committed upstream.
+
+Before committing anything in the outer repo, reset submodules back to their clean,
+pinned state:
+
+```bash
+git submodule foreach 'git checkout -- . && git clean -fdx'
+```
+
+This is safe — it only discards *uncommitted* changes inside each submodule
+(build artifacts from local runs), not the pinned commit itself or anything
+actually committed upstream.
