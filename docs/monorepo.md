@@ -40,6 +40,11 @@ versions of that hashing path didn't understand a nested submodule `.git` bounda
 A submodule with no `package.json` at all (config/tooling, not a buildable
 package) doesn't go under `packages/*` — see [`tooling/`](../tooling/README.md).
 
+**Updating one afterward:** submodule packages are pins, not edit targets — changes
+flow one way, from each submodule's own upstream repo into this one, never the other
+direction. See [`submodules.md`](./submodules.md#change-direction-submodules-are-pins-not-edit-targets)
+for why and the actual workflow.
+
 ## pnpm build-script approval
 
 pnpm 11 blocks a dependency's install/postinstall scripts by default
