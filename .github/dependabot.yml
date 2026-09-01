@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://json.schemastore.org/dependabot-2.0.json
+version: 2
+updates:
+  # Auto-proposes a pin bump for every submodule registered in .gitmodules
+  # (one entry here covers all of them, not one per submodule).
+  #
+  # Prioritizes the latest semver release tag over the branch tip when a
+  # submodule has proper vX.Y.Z tags (payload-plugin-mermaid does; see
+  # https://github.com/dependabot/dependabot-core/pull/13052). issue-bot
+  # only has a rolling `v1` major tag (the standard GitHub Action
+  # convention), not strict semver, so it likely still falls back to
+  # branch-tip tracking - not a regression, just not the new upside.
+  #
+  # cooldown delays a proposed bump until a release has existed for this
+  # many days, per docs/submodules.md's "most recent release, not the
+  # instant it lands" policy. To bump sooner than the cooldown allows
+  # (or to something Dependabot won't reach at all, e.g. a specific
+  # branch), use the manual workflow in docs/submodules.md instead -
+  # that's the deliberate opt-out, not a Dependabot setting.
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7

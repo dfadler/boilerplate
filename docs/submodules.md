@@ -77,6 +77,57 @@ merged past on the upstream branch). Worth adding if this policy actually gets
 violated in practice; skipped for now as more moving parts than the failure mode
 has earned for a single-maintainer repo so far.
 
+## Automated pin bumps (Dependabot)
+
+[`.github/dependabot.yml`](../.github/dependabot.yml) runs Dependabot's
+`gitsubmodule` ecosystem against every submodule registered in `.gitmodules` (one
+config entry covers all of them — Dependabot resolves the full list itself, no
+per-submodule entry needed). It opens a PR bumping a pin the same way the manual
+workflow above does — same "pull an upstream change in" direction, just proposed
+automatically instead of by hand.
+
+**Targets the latest stable release, not the latest commit.** Dependabot's
+`gitsubmodule` support used to always track the tip of the branch in `.gitmodules`
+regardless of tags; that changed in
+[dependabot-core#13052](https://github.com/dependabot/dependabot-core/pull/13052)
+(merged 2026-02-17) to prioritize semver release tags (`vX.Y.Z`) when a submodule
+has them. `packages/payload-plugin-mermaid` tags proper semver releases, so this
+works cleanly there. `packages/issue-bot` only carries a rolling `v1` major tag (the
+standard GitHub Action convention — consumers pin `@v1` and it moves), not strict
+semver, so it likely still falls back to tracking the branch tip — not a
+regression, just not the new upside; confirm by watching what its first Dependabot
+PR actually targets.
+
+**The waiting period, and how to skip it.** `cooldown.default-days: 7` delays a
+proposed bump until a release has existed for 7 days — the "let it prove itself
+first" window. There's no separate config for skipping it: the manual workflow
+above (`cd packages/<name> && git pull`, then bump the pin) *is* the opt-out.
+Nothing about running it early conflicts with the automation; Dependabot just
+won't open its own PR for a release still inside the cooldown window.
+
+## Testing an unreleased submodule branch (temporary, not a pin)
+
+Sometimes you want to try a submodule's in-progress branch — not its latest
+release, not even its `main` — before it's merged upstream at all. This is a
+deliberate, temporary exception to everything above: the resulting pin tracks a
+moving branch tip, so it has none of the reproducibility guarantees a normal pin
+does, and it must never reach this repo's real `main`.
+
+```bash
+cd packages/<name>
+git fetch origin
+git checkout <branch-name>
+cd ../..
+git add packages/<name>
+git commit -m "test: point <name> at <branch-name> for evaluation (do not merge)"
+```
+
+Do this only on a scratch branch of this repo (e.g. `test/<name>-<branch-name>`),
+never on `main` and never in a PR intended to merge. When you're done evaluating,
+either discard the branch entirely, or — if it proved out and you want to keep it —
+switch back to a real pin: wait for the upstream branch to actually merge and
+release, then bump to that the normal way.
+
 ## Cloning / updating this repo
 
 ```bash

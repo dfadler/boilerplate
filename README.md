@@ -6,8 +6,9 @@ package, when a package needs its own independently-maintained repo.
 
 - [`docs/monorepo.md`](docs/monorepo.md) — architecture and how to add a package
 - [`docs/submodules.md`](docs/submodules.md) — the submodule workflow, the
-  one-way change-direction policy, public vs. private, and the one Turborepo
-  caveat (`turbo prune`) worth knowing about
+  one-way change-direction policy, automated Dependabot pin bumps, testing an
+  unreleased branch, public vs. private, and the one Turborepo caveat
+  (`turbo prune`) worth knowing about
 - [`docs/roadmap.md`](docs/roadmap.md) — what changes if/when a non-JS package
   needs to be added
 
