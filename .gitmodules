@@ -1,9 +1,0 @@
-[submodule "packages/issue-bot"]
-	path = packages/issue-bot
-	url = https://github.com/dfadler/issue-bot.git
-[submodule "packages/payload-plugin-mermaid"]
-	path = packages/payload-plugin-mermaid
-	url = https://github.com/dfadler/payload-plugin-mermaid.git
-[submodule "tooling/agent-config"]
-	path = tooling/agent-config
-	url = https://github.com/dfadler/agent-config.git
