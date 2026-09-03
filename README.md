@@ -1,27 +1,57 @@
 # boilerplate
 
-Personal boilerplate for new projects: a pnpm + Turborepo monorepo where packages
-can either live directly in the repo or be attached as git submodules, opt-in per
-package, when a package needs its own independently-maintained repo.
+Personal template and shared-config source for new TypeScript/React projects —
+pnpm + Turborepo, `oxlint`, `esbuild`. This repo doesn't vendor or orchestrate
+other, independently-maintained projects; it's the thing *other* repos start from
+or pull config out of, never the other way around.
 
-- [`docs/monorepo.md`](docs/monorepo.md) — architecture and how to add a package
-- [`docs/submodules.md`](docs/submodules.md) — the submodule workflow, the
-  one-way change-direction policy, automated Dependabot pin bumps, testing an
-  unreleased branch, public vs. private, and the one Turborepo caveat
-  (`turbo prune`) worth knowing about
-- [`docs/roadmap.md`](docs/roadmap.md) — what changes if/when a non-JS package
-  needs to be added
+- [`docs/monorepo.md`](docs/monorepo.md) — the pnpm + Turborepo architecture and
+  how to add a package
 
-## Packages
+## Using this as a template
 
-- [`packages/issue-bot`](https://github.com/dfadler/issue-bot) — GitHub Action, TypeScript
-- [`packages/payload-plugin-mermaid`](https://github.com/dfadler/payload-plugin-mermaid) — Payload CMS plugin, TypeScript
-- [`tooling/agent-config`](https://github.com/dfadler/agent-config) — Claude Code agent config, Shell/Python (vendored only, not a workspace package — see [`tooling/README.md`](tooling/README.md))
+This repo is a GitHub template — click **Use this template** on
+[github.com/dfadler/boilerplate](https://github.com/dfadler/boilerplate) to get a
+fresh, disconnected copy to start a new project from (the pnpm/Turborepo scaffold,
+`tsconfig.base.json`, `.oxlintrc.json`, and the CI workflow — no ongoing link back
+to this repo).
 
-## Quick start
+## Consuming shared config from an existing repo
+
+No config here is published to npm. An existing repo picks up `tsconfig.base.json`
+and `.oxlintrc.json` by attaching this repo as a submodule and extending from it:
 
 ```bash
-git clone --recurse-submodules git@github.com:dfadler/boilerplate.git
+git submodule add https://github.com/dfadler/boilerplate.git .boilerplate
+```
+
+```jsonc
+// tsconfig.json
+{ "extends": "./.boilerplate/tsconfig.base.json" }
+```
+
+```jsonc
+// .oxlintrc.json
+{ "extends": ["./.boilerplate/.oxlintrc.json"] }
+```
+
+For CI, no submodule needed — reference the reusable workflow directly:
+
+```yaml
+# .github/workflows/ci.yml
+jobs:
+  ci:
+    uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
+```
+
+It assumes a pnpm workspace with `build`/`lint`/`typecheck`/`test` scripts at the
+consuming repo's root (stub any that don't apply). This repo's own `ci.yml` calls
+the same reusable workflow, so it's exercised on every PR here too.
+
+## Developing this repo
+
+```bash
+git clone git@github.com:dfadler/boilerplate.git
 cd boilerplate
 pnpm install
 pnpm build

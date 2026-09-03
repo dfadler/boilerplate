@@ -1,0 +1,38 @@
+name: Reusable CI
+
+# Meant to be called from another repo's own workflow, not just this one:
+#   jobs:
+#     ci:
+#       uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
+# Assumes a pnpm workspace with build/lint/typecheck/test scripts at the root
+# (stub any that don't apply — same convention as this repo's own packages).
+# This repo's own ci.yml calls it too, so it's exercised on every PR here.
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version to use"
+        type: string
+        default: "22"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
