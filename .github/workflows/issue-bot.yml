@@ -1,0 +1,25 @@
+name: issue-bot
+
+# Files a standalone issue from a PR comment that mentions @issue-bot
+# (review comment on a diff line, or a general PR conversation comment).
+# No AI involved — deterministic mention match, dedup by thread-root backlink.
+#
+# https://github.com/dfadler/issue-bot
+
+on:
+  pull_request_review_comment:
+    types: [created, edited]
+  issue_comment:
+    types: [created, edited]
+
+jobs:
+  issue-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      pull-requests: read
+    steps:
+      # Pinned to the v1 tag's commit (not @v1/@main, which are mutable) —
+      # same third-party-action policy as this repo's other workflows.
+      - uses: dfadler/issue-bot@e66038db719cdb9b17f12e6918c5beb239c3abf8 # v1.1.0
