@@ -27,6 +27,30 @@ is meant to consume it.
 4. `pnpm build` (or `turbo run build --filter=<package-name>`) to confirm it's wired
    up correctly.
 
+## Dead-code detection
+
+[`knip`](https://knip.dev) (root `knip.jsonc`, `pnpm deadcode`) flags unused files,
+exports, and dependencies across the whole pnpm workspace in one pass — that's also
+why it's not routed through Turborepo like `build`/`lint`/etc.: knip needs to see
+every package at once to trace usage between them, not one package in isolation.
+
+A few things worth knowing before adding a real package or turning this on for a
+consuming project (see the root [`README.md`](../README.md) for the two ways a
+downstream repo picks this up):
+
+- It has no `extends` field, unlike `tsconfig.base.json`/`.oxlintrc.json` — a repo
+  on the submodule-consumption path can't inherit `knip.jsonc` directly; copy it as
+  a starting point and adjust per project instead.
+- By default it does **not** flag unused exports on a package's entry file (its
+  `main`/`exports` field) — those are treated as public API. For an internal-only
+  package nothing outside the repo imports, set `"includeEntryExports": true` in
+  that workspace's knip config, or dead exports on the entry file pass silently.
+- A devDependency invoked only as a CLI via a script knip can't statically resolve
+  (e.g. `oxlint`, run from each package's own `lint` script once a package defines
+  one) reads as "unused" until something calls it. `knip.jsonc`'s
+  `ignoreDependencies` already covers this for `oxlint`; add to it (with a comment
+  saying why) rather than removing a dependency that's genuinely still needed.
+
 ## pnpm build-script approval
 
 pnpm 11 blocks a dependency's install/postinstall scripts by default

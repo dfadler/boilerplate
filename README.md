@@ -48,6 +48,35 @@ It assumes a pnpm workspace with `build`/`lint`/`typecheck`/`test` scripts at th
 consuming repo's root (stub any that don't apply). This repo's own `ci.yml` calls
 the same reusable workflow, so it's exercised on every PR here too.
 
+## Finding dead code in a project built from this template
+
+A fresh template copy already has [`knip`](https://knip.dev) as a dev dependency,
+a root `knip.jsonc`, and a `pnpm deadcode` script — run it directly (it's not
+routed through Turborepo like `build`/`lint`/etc., since knip needs a whole-workspace
+view to trace usage across packages, not a per-package one):
+
+```bash
+pnpm deadcode
+```
+
+Unlike `tsconfig.base.json`/`.oxlintrc.json`, knip has no `extends` mechanism, so an
+existing repo on the submodule path can't inherit `knip.jsonc` directly — copy
+`knip.jsonc` from this repo as a starting point instead and adjust it for the
+project's own structure (see [`docs/monorepo.md`](docs/monorepo.md#dead-code-detection)
+for what to watch out for, e.g. entry-point exports aren't flagged by default).
+
+Once a `deadcode` script exists, opt the CI job in (it's off by default so repos
+without the script aren't broken by it):
+
+```yaml
+# .github/workflows/ci.yml
+jobs:
+  ci:
+    uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
+    with:
+      deadcode: true
+```
+
 ## Developing this repo
 
 ```bash

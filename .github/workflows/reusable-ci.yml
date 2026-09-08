@@ -7,6 +7,15 @@ name: Reusable CI
 # Assumes a pnpm workspace with build/lint/typecheck/test scripts at the root
 # (stub any that don't apply — same convention as this repo's own packages).
 # This repo's own ci.yml calls it too, so it's exercised on every PR here.
+#
+# The `deadcode` job is opt-in (default off, so existing callers aren't
+# broken by a script they don't have) — enable it once the consuming repo
+# has its own `deadcode` script (e.g. `knip`):
+#   jobs:
+#     ci:
+#       uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
+#       with:
+#         deadcode: true
 on:
   workflow_call:
     inputs:
@@ -14,6 +23,10 @@ on:
         description: "Node.js version to use"
         type: string
         default: "22"
+      deadcode:
+        description: "Run `pnpm deadcode` (requires that script to exist)"
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -36,3 +49,22 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+
+  deadcode:
+    if: ${{ inputs.deadcode }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm deadcode
