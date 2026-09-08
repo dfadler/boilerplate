@@ -1,0 +1,87 @@
+# CodeRabbit configuration — https://docs.coderabbit.ai/reference/configuration
+# Requires the CodeRabbit GitHub App to be installed on this repo
+# (https://github.com/apps/coderabbitai) before it takes effect.
+
+language: "en-US"
+
+tone_instructions: >-
+  Be terse and specific. Point at the exact file/line and the concrete
+  failure scenario instead of general observations. Skip praise and
+  restating what the diff already makes obvious.
+
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: false
+
+  path_filters:
+    - "!dist/**"
+    - "!coverage/**"
+    - "!node_modules/**"
+    - "!pnpm-lock.yaml"
+
+  path_instructions:
+    - path: "tsconfig.base.json"
+      instructions: |
+        This is shared config other repos extend via
+        `{ "extends": "./.boilerplate/tsconfig.base.json" }` after adding this
+        repo as a git submodule (see README.md's "Consuming shared config"
+        section) — there is no version pin on that reference, so a change
+        here takes effect in every consuming repo the next time its
+        submodule is updated. Flag anything that tightens a check (e.g.
+        `strict`, new compiler options) as a breaking change for consumers,
+        not just a local improvement.
+
+    - path: ".oxlintrc.json"
+      instructions: |
+        Same shared-config caveat as tsconfig.base.json: consuming repos
+        extend this file via submodule with no version pin. A new or
+        tightened rule here can fail lint in every consuming repo the next
+        time its submodule is updated, not just in this one.
+
+    - path: ".github/workflows/reusable-ci.yml"
+      instructions: |
+        This workflow is called from other repos via
+        `uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main`
+        (see README.md and this file's own header comment) — its `inputs`
+        names/types, defaults, and job names are a public interface. Flag
+        a rename or removal of an existing input or job as a breaking
+        change for callers, not an internal refactor. The `deadcode` job
+        must stay opt-in (default `false`) since most callers don't have a
+        `deadcode` script yet.
+
+    - path: ".github/workflows/*.yml"
+      instructions: |
+        Third-party actions (anything not `actions/*` or `pnpm/action-setup`)
+        must be pinned to a full commit SHA with a `# vX.Y.Z` comment, not a
+        mutable tag or branch like `@v1` or `@main` — see the pin on
+        `dfadler/issue-bot` in issue-bot.yml for the existing convention.
+        Flag any new third-party action reference that isn't SHA-pinned.
+
+    - path: "packages/**"
+      instructions: |
+        Per docs/monorepo.md, every package under packages/* needs a
+        `package.json` with `build`/`lint`/`test`/`typecheck` scripts
+        (stubbed if not applicable) — turbo.json's task graph expects every
+        workspace member to define all four. Flag a new package that's
+        missing one of those scripts.
+
+    - path: "knip.jsonc"
+      instructions: |
+        Unlike tsconfig.base.json/.oxlintrc.json, knip has no `extends`
+        mechanism — README.md documents that a consuming repo copies this
+        file rather than inheriting it. Don't flag drift from a
+        hypothetical "shared" knip config; there isn't one to stay in sync
+        with. Do flag an `ignoreDependencies` entry added without an
+        adjacent comment explaining why (the existing `oxlint` entry is the
+        pattern to match).
+
+  tools:
+    github-checks:
+      timeout_ms: 300000
