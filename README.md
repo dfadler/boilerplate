@@ -91,6 +91,10 @@ jobs:
 
 ## Developing this repo
 
+PRs get an automated first-pass review from [CodeRabbit](https://coderabbit.ai),
+configured in [.coderabbit.yaml](.coderabbit.yaml). It's a supplement to CI, not a
+replacement — nothing here relaxes `pnpm build`/`lint`/`typecheck`/`test`.
+
 ```bash
 git clone git@github.com:dfadler/boilerplate.git
 cd boilerplate
