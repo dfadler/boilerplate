@@ -42,10 +42,10 @@ guesswork:
 - **Framework:** Next.js (App Router) + React, for anything that's a full-stack app
   rather than a pure static site or a library.
 - **CMS / structured content:** when a project needs an admin-editable content model
-  rather than hardcoded content, a code-first headless CMS that lives in the same
-  repo as the app (schema-as-code, versioned with everything else) over a
-  separately-hosted SaaS CMS — keeps content modeling in the same PR review flow as
-  the code that renders it.
+  rather than hardcoded content, PayloadCMS — a code-first headless CMS that lives
+  in the same repo as the app (schema-as-code, versioned with everything else) over
+  a separately-hosted SaaS CMS — keeps content modeling in the same PR review flow
+  as the code that renders it.
 - **Rich text:** whatever editor the chosen CMS ships by default, rather than
   bolting on a second rich-text library.
 - **Styling:** plain CSS Modules by default. Reach for a utility-class framework or
