@@ -7,6 +7,9 @@ or pull config out of, never the other way around.
 
 - [`docs/monorepo.md`](docs/monorepo.md) — the pnpm + Turborepo architecture and
   how to add a package
+- [`docs/baseline-dependencies.md`](docs/baseline-dependencies.md) — recommended
+  dev/build and product dependencies for a new web project started from this
+  template
 
 ## Using this as a template
 
