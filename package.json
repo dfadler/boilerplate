@@ -7,12 +7,14 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "deadcode": "knip",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
+    "knip": "^6.34.0",
     "oxlint": "^1.80.0",
     "turbo": "^2.10.12",
     "typescript": "^7.0.2"

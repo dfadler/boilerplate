@@ -48,6 +48,44 @@ It assumes a pnpm workspace with `build`/`lint`/`typecheck`/`test` scripts at th
 consuming repo's root (stub any that don't apply). This repo's own `ci.yml` calls
 the same reusable workflow, so it's exercised on every PR here too.
 
+## Finding dead code in a project built from this template
+
+A fresh template copy already has [`knip`](https://knip.dev) as a dev dependency,
+a root `knip.jsonc`, and a `pnpm deadcode` script — run it directly (it's not
+routed through Turborepo like `build`/`lint`/etc., since knip needs a whole-workspace
+view to trace usage across packages, not a per-package one):
+
+```bash
+pnpm deadcode
+```
+
+Unlike `tsconfig.base.json`/`.oxlintrc.json`, knip has no `extends` mechanism, so an
+existing repo on the submodule path can't inherit `knip.jsonc` directly — copy
+`knip.jsonc` from this repo as a starting point instead and adjust it for the
+project's own structure. A few things worth knowing before doing that:
+
+- By default knip does **not** flag unused exports on a package's entry file (its
+  `main`/`exports` field) — those are treated as public API. For an internal-only
+  package nothing outside the repo imports, set `"includeEntryExports": true` in
+  that workspace's knip config, or dead exports on the entry file pass silently.
+- A devDependency invoked only as a CLI via a script knip can't statically resolve
+  (e.g. `oxlint`, run from each package's own `lint` script once a package defines
+  one) reads as "unused" until something calls it. `knip.jsonc`'s
+  `ignoreDependencies` already covers this for `oxlint`; add to it (with a comment
+  saying why) rather than removing a dependency that's genuinely still needed.
+
+Once a `deadcode` script exists, opt the CI job in (it's off by default so repos
+without the script aren't broken by it):
+
+```yaml
+# .github/workflows/ci.yml
+jobs:
+  ci:
+    uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
+    with:
+      deadcode: true
+```
+
 ## Developing this repo
 
 ```bash

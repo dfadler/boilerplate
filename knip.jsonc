@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Workspaces are auto-detected from pnpm-workspace.yaml's "packages/*" —
+  // no need to repeat that here. Once a real package exists under
+  // packages/*, give it its own knip config block if its entry points
+  // don't match knip's defaults.
+  "ignoreDependencies": [
+    // oxlint is invoked from each package's own "lint" script once a
+    // package exists (see docs/monorepo.md), not imported or called from
+    // the root package.json — a fresh template scaffold has no packages
+    // yet, so knip has nothing to see it being used by.
+    "oxlint"
+  ]
+}
