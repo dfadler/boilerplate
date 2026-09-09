@@ -14,12 +14,9 @@ on:
 
 jobs:
   issue-bot:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
     permissions:
       issues: write
-      pull-requests: read
-    steps:
-      # Pinned to the v1 tag's commit (not @v1/@main, which are mutable) —
-      # same third-party-action policy as this repo's other workflows.
-      - uses: dfadler/issue-bot@778495b3d77158d2ed1f3c596f50bc2664f11386 # v1.3.0
+      pull-requests: write
+    uses: dfadler/issue-bot/.github/workflows/reusable.yml@778495b3d77158d2ed1f3c596f50bc2664f11386 # v1.3.0
+    with:
+      ref: 778495b3d77158d2ed1f3c596f50bc2664f11386 # v1.3.0
