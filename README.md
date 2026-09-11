@@ -19,6 +19,16 @@ fresh, disconnected copy to start a new project from (the pnpm/Turborepo scaffol
 `tsconfig.base.json`, `.oxlintrc.json`, and the CI workflow — no ongoing link back
 to this repo).
 
+## Repo layout: `.github/` vs `github/`
+
+- **`.github/`** — what this repo needs to run itself: its own CI (`ci.yml`,
+  `issue-bot.yml`) and the reusable CI workflow other repos call
+  (`reusable-ci.yml`) — GitHub requires reusable workflows to live directly in
+  `.github/workflows/`, so that one file is the exception living here for a
+  different repo's benefit, distinguished only by its `reusable-` prefix.
+- **[`github/`](github/README.md)** — everything else meant for other repos to
+  consume that isn't a workflow file: composite actions and copyable templates.
+
 ## Consuming shared config from an existing repo
 
 No config here is published to npm. An existing repo picks up `tsconfig.base.json`
@@ -50,6 +60,22 @@ jobs:
 It assumes a pnpm workspace with `build`/`lint`/`typecheck`/`test` scripts at the
 consuming repo's root (stub any that don't apply). This repo's own `ci.yml` calls
 the same reusable workflow, so it's exercised on every PR here too.
+
+Two more jobs are opt-in (default off, so existing callers aren't broken) and need
+nothing extra from the consuming repo — `actionlint` lints `.github/workflows/**`
+with [actionlint](https://github.com/rhysd/actionlint) and shellcheck; `security-audit`
+runs `pnpm audit --prod --audit-level=high` (allowlist an unfixable finding under
+`auditConfig.ignoreGhsas` in the consuming repo's own `pnpm-workspace.yaml`):
+
+```yaml
+# .github/workflows/ci.yml
+jobs:
+  ci:
+    uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
+    with:
+      actionlint: true
+      security-audit: true
+```
 
 ## Finding dead code in a project built from this template
 

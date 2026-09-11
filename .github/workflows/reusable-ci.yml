@@ -16,6 +16,28 @@ name: Reusable CI
 #       uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
 #       with:
 #         deadcode: true
+#
+# The `actionlint` job is opt-in (default off) — lints the consuming repo's
+# own .github/workflows/** for syntax/expression errors and, via shellcheck,
+# bugs in embedded `run:` scripts. Needs nothing beyond workflow files to
+# lint (ported from dfadler/agent-config's actionlint.yml):
+#   jobs:
+#     ci:
+#       uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
+#       with:
+#         actionlint: true
+#
+# The `security-audit` job is opt-in (default off) — fails on a new
+# high/critical-severity advisory in the production dependency tree
+# (`pnpm audit --prod --audit-level=high`). A finding with no available fix
+# can be allowlisted in the consuming repo's own pnpm-workspace.yaml under
+# `auditConfig.ignoreGhsas` (ported from dfadler/dfadler.com's
+# security-audit.yml):
+#   jobs:
+#     ci:
+#       uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
+#       with:
+#         security-audit: true
 on:
   workflow_call:
     inputs:
@@ -25,6 +47,14 @@ on:
         default: "22"
       deadcode:
         description: "Run `pnpm deadcode` (requires that script to exist)"
+        type: boolean
+        default: false
+      actionlint:
+        description: "Lint .github/workflows/** with actionlint + shellcheck"
+        type: boolean
+        default: false
+      security-audit:
+        description: "Run `pnpm audit --prod --audit-level=high`"
         type: boolean
         default: false
 
@@ -68,3 +98,59 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm deadcode
+
+  actionlint:
+    if: ${{ inputs.actionlint }}
+    runs-on: ubuntu-latest
+    env:
+      ACTIONLINT_VERSION: 1.7.12
+      ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # This job only reads the checked-out workflow files and never
+          # needs authenticated git — don't leave the GITHUB_TOKEN in reach.
+          persist-credentials: false
+
+      # Verified before extraction: piping curl into tar would run the
+      # unverified payload first and check it never.
+      - name: Install actionlint ${{ env.ACTIONLINT_VERSION }}
+        run: |
+          curl -fsSL -o /tmp/actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          echo "${ACTIONLINT_SHA256}  /tmp/actionlint.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
+          sudo install -m 0755 /tmp/actionlint /usr/local/bin/actionlint
+          rm -f /tmp/actionlint.tar.gz /tmp/actionlint
+          actionlint --version
+
+      - name: Install shellcheck
+        uses: ./github/actions/install-shellcheck
+
+      - name: Lint workflows (actionlint)
+        run: actionlint
+
+  security-audit:
+    if: ${{ inputs.security-audit }}
+    name: pnpm audit (prod, high+)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # This job runs PR-controlled code and never needs authenticated
+          # git after checkout — don't leave the GITHUB_TOKEN in reach.
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Fails (non-zero exit) on any high/critical prod advisory not listed
+      # in the consuming repo's pnpm-workspace.yaml `auditConfig.ignoreGhsas`.
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
