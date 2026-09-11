@@ -1,0 +1,38 @@
+name: Setup pnpm and Node.js
+description: >
+  Installs pnpm and the requested Node.js version, then runs a
+  frozen-lockfile install. Factored out of reusable-ci.yml's build,
+  deadcode, and security-audit jobs, which all repeated this same
+  three-step sequence right after their own checkout.
+
+# KNOWN LIMITATION: same as github/actions/install-shellcheck (see that
+# action's comment for the full explanation) — referenced from
+# reusable-ci.yml via a relative `./` path, which resolves against the
+# *caller's* checkout, not this repo. This only works today because every
+# job that uses it checks out this repo (boilerplate) itself. An external
+# consuming repo's checkout won't contain this path. Tracked for the same
+# fast-follow as install-shellcheck: switch both to an explicit
+# `dfadler/boilerplate/github/actions/<name>@main` reference once `main`
+# has this file to resolve against.
+#
+# Deliberately does NOT do its own checkout: a `./`-referenced local action
+# can only be resolved once the calling job has already checked out a repo
+# containing this path, so checkout must stay as the job's own first step.
+
+inputs:
+  node-version:
+    description: "Node.js version to use"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+
+    - run: pnpm install --frozen-lockfile
+      shell: bash

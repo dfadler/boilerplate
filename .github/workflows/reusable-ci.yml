@@ -66,14 +66,9 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
+      - uses: ./github/actions/setup-pnpm-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
 
       - run: pnpm build
       - run: pnpm lint
@@ -88,14 +83,9 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
+      - uses: ./github/actions/setup-pnpm-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
 
       - run: pnpm deadcode
 
@@ -154,14 +144,9 @@ jobs:
           # git after checkout — don't leave the GITHUB_TOKEN in reach.
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
+      - uses: ./github/actions/setup-pnpm-node
         with:
           node-version: ${{ inputs.node-version }}
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
 
       # Fails (non-zero exit) on any high/critical prod advisory not listed
       # in the consuming repo's pnpm-workspace.yaml `auditConfig.ignoreGhsas`.
