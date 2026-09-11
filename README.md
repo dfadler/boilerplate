@@ -2,7 +2,7 @@
 
 Personal template and shared-config source for new TypeScript/React projects —
 pnpm + Turborepo, `oxlint`, `esbuild`. This repo doesn't vendor or orchestrate
-other, independently-maintained projects; it's the thing *other* repos start from
+other, independently-maintained projects; it's the thing _other_ repos start from
 or pull config out of, never the other way around.
 
 - [`docs/monorepo.md`](docs/monorepo.md) — the pnpm + Turborepo architecture and

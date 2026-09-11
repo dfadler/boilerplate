@@ -9,6 +9,6 @@
     // package exists (see docs/monorepo.md), not imported or called from
     // the root package.json — a fresh template scaffold has no packages
     // yet, so knip has nothing to see it being used by.
-    "oxlint"
-  ]
+    "oxlint",
+  ],
 }

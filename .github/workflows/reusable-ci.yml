@@ -38,6 +38,15 @@ name: Reusable CI
 #       uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
 #       with:
 #         security-audit: true
+#
+# The `format` job is opt-in (default off, same reasoning as `deadcode`) —
+# enable it once the consuming repo has its own `format:check` script
+# (e.g. `prettier --check .`):
+#   jobs:
+#     ci:
+#       uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
+#       with:
+#         format: true
 on:
   workflow_call:
     inputs:
@@ -55,6 +64,10 @@ on:
         default: false
       security-audit:
         description: "Run `pnpm audit --prod --audit-level=high`"
+        type: boolean
+        default: false
+      format:
+        description: "Run `pnpm format:check` (requires that script to exist)"
         type: boolean
         default: false
 
@@ -154,3 +167,22 @@ jobs:
       # in the consuming repo's pnpm-workspace.yaml `auditConfig.ignoreGhsas`.
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level=high
+
+  format:
+    if: ${{ inputs.format }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm format:check
