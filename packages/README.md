@@ -4,7 +4,7 @@ Every directory here is a pnpm workspace package matched by `packages/*` in
 [`pnpm-workspace.yaml`](../pnpm-workspace.yaml); Turborepo (`turbo.json`) discovers
 and orders tasks across them via each package's `package.json`.
 
-This is currently empty. Packages here belong to *this* repo — either something
+This is currently empty. Packages here belong to _this_ repo — either something
 this template repo maintains and ships as part of itself, or a package you add
 locally after scaffolding a new project from this template. This repo does not
 vendor other, independently-maintained projects as submodules under `packages/*`

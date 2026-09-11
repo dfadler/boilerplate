@@ -22,6 +22,12 @@ Already what this repo provides or assumes — see
 - **Language:** TypeScript in strict mode (`tsconfig.base.json`).
 - **Lint:** oxlint (root `.oxlintrc.json`) over ESLint — faster, single binary, no
   plugin sprawl to maintain.
+- **Format:** Prettier (root `.prettierrc.json`), with `prettier-plugin-jsdoc` to
+  auto-format JSDoc comment blocks (aligning `@param`/`@returns`, capitalizing and
+  wrapping description text) — kept separate from oxlint, which only lints and
+  doesn't format. Revisit once oxc's own formatter (`oxfmt`) — which is gaining
+  native JSDoc formatting — matures past beta; it would let this repo drop Prettier
+  and stay on a single oxc-based toolchain for both lint and format.
 - **Bundler for library packages:** esbuild, for anything under `packages/*` that
   needs to ship compiled output.
 - **CI:** the reusable workflow (`reusable-ci.yml`) other repos can call directly
@@ -35,8 +41,8 @@ they operate at different layers.
 
 ## Product baseline (pick what applies)
 
-None of this is a default install — it's what to reach for *when the project needs
-that capability*, based on combinations that have proven solid rather than
+None of this is a default install — it's what to reach for _when the project needs
+that capability_, based on combinations that have proven solid rather than
 guesswork:
 
 - **Framework:** Next.js (App Router) + React, for anything that's a full-stack app
