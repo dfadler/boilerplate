@@ -10,8 +10,12 @@ GitHub requires to live in `.github/workflows/`).
   uses: dfadler/boilerplate/github/actions/<name>@main
   ```
 
-  Currently ships `actions/install-shellcheck` (used by `reusable-ci.yml`'s
-  `actionlint` job).
+  Currently ships:
+  - `actions/install-shellcheck` — used by `reusable-ci.yml`'s `actionlint` job.
+  - `actions/setup-pnpm-node` — pnpm + Node.js + frozen-lockfile install. Not yet
+    wired into `reusable-ci.yml`'s `build`/`deadcode`/`security-audit` jobs (see
+    the action's own header comment) — those jobs still inline the same steps
+    until a follow-up PR can reference this action by an explicit `@main` ref.
 
 - **`templates/`** — files a new repo copies in rather than references live (a starting
   PR template, `dependabot.yml`, etc.). Copy, don't symlink or submodule — a template is

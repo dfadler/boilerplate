@@ -1,0 +1,43 @@
+name: Setup pnpm and Node.js
+description: >
+  Installs pnpm and the requested Node.js version, then runs a
+  frozen-lockfile install — the same three-step sequence repeated by
+  reusable-ci.yml's build, deadcode, and security-audit jobs.
+
+# NOT YET WIRED IN: reusable-ci.yml's build/deadcode/security-audit jobs
+# still inline these three steps rather than calling this action, even
+# though it exists to replace them. A `./`-referenced local action only
+# resolves once the calling job has already checked out a repo containing
+# that path — and those jobs' own checkout step checks out the *caller's*
+# repo, not this one, for every external consumer of the reusable workflow.
+# Referencing this action locally there would break `build` (not opt-in)
+# for every external caller immediately on merge — see the discussion on
+# dfadler/boilerplate#20.
+#
+# This file exists now so a follow-up PR can wire it in once `main` has it,
+# via an explicit `dfadler/boilerplate/github/actions/setup-pnpm-node@main`
+# reference (works for any caller, no checkout-order dependency) — the same
+# fast-follow already tracked for github/actions/install-shellcheck's `./`
+# reference in reusable-ci.yml's actionlint job.
+#
+# Deliberately does NOT do its own checkout: even once referenced via the
+# explicit ref above, checkout stays the job's own first step so the
+# action's `pnpm install` runs against the caller's actual repo contents.
+
+inputs:
+  node-version:
+    description: "Node.js version to use"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+
+    - run: pnpm install --frozen-lockfile
+      shell: bash

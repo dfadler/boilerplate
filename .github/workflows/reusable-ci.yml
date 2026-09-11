@@ -137,6 +137,19 @@ jobs:
           rm -f /tmp/actionlint.tar.gz /tmp/actionlint
           actionlint --version
 
+      # KNOWN LIMITATION: a relative `./` path resolves against the
+      # *caller's* checkout, not this repo — a reusable workflow's
+      # actions/checkout defaults to the caller's `github.repository`, and
+      # this action doesn't exist there. This only works today because the
+      # sole caller so far is this repo itself; an external caller setting
+      # `actionlint: true` would fail here. Tracked for a fast-follow once
+      # main has this file to reference (see PR review discussion) — fixing
+      # it in this same PR isn't possible: an explicit
+      # `dfadler/boilerplate/github/actions/install-shellcheck@main`
+      # reference can't resolve before this PR (which adds that path) is
+      # merged to main, and GitHub's newer `$/` self-repository syntax,
+      # which sidesteps that ordering problem, has no actionlint support
+      # yet (confirmed against actionlint 1.7.12).
       - name: Install shellcheck
         uses: ./github/actions/install-shellcheck
 
