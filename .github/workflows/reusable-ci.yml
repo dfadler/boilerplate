@@ -79,7 +79,7 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@main
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
         with:
           node-version: ${{ inputs.node-version }}
 
@@ -96,7 +96,7 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@main
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
         with:
           node-version: ${{ inputs.node-version }}
 
@@ -128,7 +128,7 @@ jobs:
           actionlint --version
 
       - name: Install shellcheck
-        uses: dfadler/boilerplate/github/actions/install-shellcheck@main
+        uses: dfadler/boilerplate/github/actions/install-shellcheck@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
 
       - name: Lint workflows (actionlint)
         run: actionlint
@@ -144,7 +144,7 @@ jobs:
           # git after checkout — don't leave the GITHUB_TOKEN in reach.
           persist-credentials: false
 
-      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@main
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
         with:
           node-version: ${{ inputs.node-version }}
 
@@ -161,7 +161,7 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@main
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
         with:
           node-version: ${{ inputs.node-version }}
 

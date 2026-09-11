@@ -5,13 +5,23 @@ description: >
   reusable-ci.yml's build, deadcode, security-audit, and format jobs.
 
 # Referenced from reusable-ci.yml via an explicit
-# `dfadler/boilerplate/github/actions/setup-pnpm-node@main` reference, not a
-# local `./` path — a `./`-referenced local action only resolves once the
-# calling job has already checked out a repo containing that path, and
-# those jobs' own checkout step checks out the *caller's* repo, not this
-# one, for every external consumer of the reusable workflow. See
-# dfadler/boilerplate#20 for the regression a local-path reference caused
-# there (it broke `build`, not opt-in, for every external caller).
+# `dfadler/boilerplate/github/actions/setup-pnpm-node@<sha>` reference
+# pinned to a commit SHA, not a local `./` path or a mutable `@main`
+# branch ref:
+#   - a `./`-referenced local action only resolves once the calling job
+#     has already checked out a repo containing that path, and those
+#     jobs' own checkout step checks out the *caller's* repo, not this
+#     one, for every external consumer of the reusable workflow. See
+#     dfadler/boilerplate#20 for the regression a local-path reference
+#     caused there (it broke `build`, not opt-in, for every external
+#     caller).
+#   - `@main` would resolve for any caller, but is mutable: a later push
+#     to main changes this action's behavior for every existing caller
+#     without review (CWE-829, flagged by zizmor on dfadler/boilerplate#22).
+#     Pinning to a specific reviewed SHA avoids that; bump the pin (and its
+#     trailing `# owner/repo#PR` comment) deliberately when this action
+#     changes, the same way install-shellcheck's own SHELLCHECK_SHA256 is
+#     bumped on a version change.
 #
 # Deliberately does NOT do its own checkout: checkout stays the job's own
 # first step so this action's `pnpm install` runs against the caller's

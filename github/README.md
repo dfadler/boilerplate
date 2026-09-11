@@ -10,6 +10,12 @@ GitHub requires to live in `.github/workflows/`).
   uses: dfadler/boilerplate/github/actions/<name>@main
   ```
 
+  `reusable-ci.yml` itself pins these to a specific commit SHA rather than `@main`
+  (a mutable ref would let a later push to main change this repo's own CI without
+  review) — see the pinned `uses:` lines in that file and each action's own header
+  comment. A consuming repo can do the same for the same reason, at the cost of not
+  picking up action changes until the pin is bumped.
+
   Currently ships:
   - `actions/install-shellcheck` — used by `reusable-ci.yml`'s `actionlint` job.
   - `actions/setup-pnpm-node` — pnpm + Node.js + frozen-lockfile install, used by
