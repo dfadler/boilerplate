@@ -2,27 +2,30 @@ name: Setup pnpm and Node.js
 description: >
   Installs pnpm and the requested Node.js version, then runs a
   frozen-lockfile install — the same three-step sequence repeated by
-  reusable-ci.yml's build, deadcode, and security-audit jobs.
+  reusable-ci.yml's build, deadcode, security-audit, and format jobs.
 
-# NOT YET WIRED IN: reusable-ci.yml's build/deadcode/security-audit jobs
-# still inline these three steps rather than calling this action, even
-# though it exists to replace them. A `./`-referenced local action only
-# resolves once the calling job has already checked out a repo containing
-# that path — and those jobs' own checkout step checks out the *caller's*
-# repo, not this one, for every external consumer of the reusable workflow.
-# Referencing this action locally there would break `build` (not opt-in)
-# for every external caller immediately on merge — see the discussion on
-# dfadler/boilerplate#20.
+# Referenced from reusable-ci.yml via an explicit
+# `dfadler/boilerplate/github/actions/setup-pnpm-node@<sha>` reference
+# pinned to a commit SHA, not a local `./` path or a mutable `@main`
+# branch ref:
+#   - a `./`-referenced local action only resolves once the calling job
+#     has already checked out a repo containing that path, and those
+#     jobs' own checkout step checks out the *caller's* repo, not this
+#     one, for every external consumer of the reusable workflow. See
+#     dfadler/boilerplate#20 for the regression a local-path reference
+#     caused there (it broke `build`, not opt-in, for every external
+#     caller).
+#   - `@main` would resolve for any caller, but is mutable: a later push
+#     to main changes this action's behavior for every existing caller
+#     without review (CWE-829, flagged by zizmor on dfadler/boilerplate#22).
+#     Pinning to a specific reviewed SHA avoids that; bump the pin (and its
+#     trailing `# owner/repo#PR` comment) deliberately when this action
+#     changes, the same way install-shellcheck's own SHELLCHECK_SHA256 is
+#     bumped on a version change.
 #
-# This file exists now so a follow-up PR can wire it in once `main` has it,
-# via an explicit `dfadler/boilerplate/github/actions/setup-pnpm-node@main`
-# reference (works for any caller, no checkout-order dependency) — the same
-# fast-follow already tracked for github/actions/install-shellcheck's `./`
-# reference in reusable-ci.yml's actionlint job.
-#
-# Deliberately does NOT do its own checkout: even once referenced via the
-# explicit ref above, checkout stays the job's own first step so the
-# action's `pnpm install` runs against the caller's actual repo contents.
+# Deliberately does NOT do its own checkout: checkout stays the job's own
+# first step so this action's `pnpm install` runs against the caller's
+# actual repo contents.
 
 inputs:
   node-version:
