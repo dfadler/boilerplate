@@ -10,3 +10,5 @@ jobs:
     uses: ./.github/workflows/reusable-ci.yml
     with:
       node-version: "22"
+      actionlint: true
+      security-audit: true
