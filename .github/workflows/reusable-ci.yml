@@ -82,14 +82,9 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
         with:
           node-version: ${{ inputs.node-version }}
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
 
       - run: pnpm build
       - run: pnpm lint
@@ -104,14 +99,9 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
         with:
           node-version: ${{ inputs.node-version }}
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
 
       - run: pnpm deadcode
 
@@ -140,21 +130,8 @@ jobs:
           rm -f /tmp/actionlint.tar.gz /tmp/actionlint
           actionlint --version
 
-      # KNOWN LIMITATION: a relative `./` path resolves against the
-      # *caller's* checkout, not this repo — a reusable workflow's
-      # actions/checkout defaults to the caller's `github.repository`, and
-      # this action doesn't exist there. This only works today because the
-      # sole caller so far is this repo itself; an external caller setting
-      # `actionlint: true` would fail here. Tracked for a fast-follow once
-      # main has this file to reference (see PR review discussion) — fixing
-      # it in this same PR isn't possible: an explicit
-      # `dfadler/boilerplate/github/actions/install-shellcheck@main`
-      # reference can't resolve before this PR (which adds that path) is
-      # merged to main, and GitHub's newer `$/` self-repository syntax,
-      # which sidesteps that ordering problem, has no actionlint support
-      # yet (confirmed against actionlint 1.7.12).
       - name: Install shellcheck
-        uses: ./github/actions/install-shellcheck
+        uses: dfadler/boilerplate/github/actions/install-shellcheck@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
 
       - name: Lint workflows (actionlint)
         run: actionlint
@@ -170,14 +147,9 @@ jobs:
           # git after checkout — don't leave the GITHUB_TOKEN in reach.
           persist-credentials: false
 
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
         with:
           node-version: ${{ inputs.node-version }}
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
 
       # Fails (non-zero exit) on any high/critical prod advisory not listed
       # in the consuming repo's pnpm-workspace.yaml `auditConfig.ignoreGhsas`.
@@ -192,13 +164,8 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
         with:
           node-version: ${{ inputs.node-version }}
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
 
       - run: pnpm format:check
