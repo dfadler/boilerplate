@@ -18,9 +18,13 @@ name: Reusable CI
 #         deadcode: true
 #
 # The `actionlint` job is opt-in (default off) — lints the consuming repo's
-# own .github/workflows/** for syntax/expression errors and, via shellcheck,
-# bugs in embedded `run:` scripts. Needs nothing beyond workflow files to
-# lint (ported from dfadler/agent-config's actionlint.yml):
+# own .github/workflows/** for syntax/expression errors, via shellcheck bugs
+# in embedded `run:` scripts, and two extra hygiene checks actionlint itself
+# doesn't cover: every workflow declares a deliberate `concurrency:` policy
+# (or an explicit opt-out comment), and every `actions/checkout` step
+# explicitly sets `persist-credentials` (ported from dfadler/agent-config's
+# actionlint.yml and dfadler/dfadler.com's check-workflow-concurrency.sh /
+# check-persist-credentials.sh). Needs nothing beyond workflow files to lint:
 #   jobs:
 #     ci:
 #       uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
@@ -59,7 +63,7 @@ on:
         type: boolean
         default: false
       actionlint:
-        description: "Lint .github/workflows/** with actionlint + shellcheck"
+        description: "Lint .github/workflows/** with actionlint + shellcheck + hygiene checks"
         type: boolean
         default: false
       security-audit:
@@ -71,6 +75,12 @@ on:
         type: boolean
         default: false
 
+# One live run per target: a new push to the same PR (or to main) supersedes
+# the in-flight run for the old commit instead of both running to completion.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -81,6 +91,9 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
+          # This job only builds/lints/tests the checked-out code and never
+          # needs authenticated git — don't leave the GITHUB_TOKEN in reach.
+          persist-credentials: false
 
       - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
         with:
@@ -98,6 +111,9 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
+          # This job only reads the checked-out code and never needs
+          # authenticated git — don't leave the GITHUB_TOKEN in reach.
+          persist-credentials: false
 
       - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
         with:
@@ -136,6 +152,9 @@ jobs:
       - name: Lint workflows (actionlint)
         run: actionlint
 
+      - name: Check workflow hygiene (concurrency, persist-credentials)
+        uses: dfadler/boilerplate/github/actions/check-workflow-hygiene@9bf8a4ad545d8f8863360445d88b4f75524761e9 # this PR
+
   security-audit:
     if: ${{ inputs.security-audit }}
     name: pnpm audit (prod, high+)
@@ -163,6 +182,9 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
+          # This job only reads/formats the checked-out code and never needs
+          # authenticated git — don't leave the GITHUB_TOKEN in reach.
+          persist-credentials: false
 
       - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
         with:
