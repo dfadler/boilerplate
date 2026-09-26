@@ -10,6 +10,9 @@ or pull config out of, never the other way around.
 - [`docs/baseline-dependencies.md`](docs/baseline-dependencies.md) — recommended
   dev/build and product dependencies for a new web project started from this
   template
+- [`docs/publishing-a-library.md`](docs/publishing-a-library.md) — versioning,
+  npm publishing, and CI/tsconfig differences for a package meant to be published
+  to npm rather than consumed only within this repo
 
 ## Using this as a template
 

@@ -29,7 +29,10 @@ Already what this repo provides or assumes — see
   native JSDoc formatting — matures past beta; it would let this repo drop Prettier
   and stay on a single oxc-based toolchain for both lint and format.
 - **Bundler for library packages:** esbuild, for anything under `packages/*` that
-  needs to ship compiled output.
+  needs to ship compiled output. For a package meant to be **published to npm**
+  rather than consumed only within this repo, see
+  [`publishing-a-library.md`](publishing-a-library.md) instead — versioning,
+  peerDependencies, and CI/tsconfig differ from the in-repo case.
 - **CI:** the reusable workflow (`reusable-ci.yml`) other repos can call directly
   instead of copying pipeline YAML.
 
