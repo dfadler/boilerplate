@@ -47,6 +47,16 @@ name: Reusable CI
 #       uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
 #       with:
 #         format: true
+#
+# The `semgrep` job is opt-in (default off) — runs Semgrep's free community
+# ruleset (`semgrep scan --config auto --error`) against the consuming
+# repo's own code. No account or token needed (ported from
+# dfadler/zombie-mermaid's ci.yml):
+#   jobs:
+#     ci:
+#       uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
+#       with:
+#         semgrep: true
 on:
   workflow_call:
     inputs:
@@ -68,6 +78,10 @@ on:
         default: false
       format:
         description: "Run `pnpm format:check` (requires that script to exist)"
+        type: boolean
+        default: false
+      semgrep:
+        description: "Run Semgrep SAST scan (`semgrep scan --config auto --error`)"
         type: boolean
         default: false
 
@@ -169,3 +183,24 @@ jobs:
           node-version: ${{ inputs.node-version }}
 
       - run: pnpm format:check
+
+  semgrep:
+    if: ${{ inputs.semgrep }}
+    name: Semgrep SAST scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # only checks out code and runs a local scan; no SARIF upload
+    container:
+      # Official Semgrep image; runs entirely against Semgrep's free, public
+      # rulesets (no SEMGREP_APP_TOKEN / Semgrep Cloud account needed).
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # --config auto pulls community rulesets keyed off the languages
+      # detected in the repo (no account/token needed). --error fails the
+      # build when findings are reported, rather than just logging them.
+      - name: Run Semgrep
+        run: semgrep scan --config auto --error
