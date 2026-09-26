@@ -1,0 +1,27 @@
+name: Check workflow hygiene
+description: >
+  Fails if a .github/workflows/** file has no deliberate concurrency policy,
+  or an actions/checkout step has an unjustified persist-credentials
+  setting. Two checks actionlint doesn't cover.
+
+# Bundles two scripts ported from dfadler/dfadler.com (check-workflow-
+# concurrency.sh, check-persist-credentials.sh). Run from reusable-ci.yml's
+# `actionlint` job, against the caller's already-checked-out .github/workflows
+# — the scripts default to that path when given none, so no input is needed
+# here.
+#
+# `${{ github.action_path }}` (not a bare relative path) is required: a
+# composite action's `run:` steps execute with the CALLER's working
+# directory, not this action's own directory, so the scripts have to be
+# located explicitly.
+
+runs:
+  using: composite
+  steps:
+    - name: Check workflow concurrency policy
+      shell: bash
+      run: "${{ github.action_path }}/check-workflow-concurrency.sh"
+
+    - name: Check checkout persist-credentials
+      shell: bash
+      run: "${{ github.action_path }}/check-persist-credentials.sh"

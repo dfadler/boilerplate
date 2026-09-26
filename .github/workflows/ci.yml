@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
 
+# One live run per target: a new push to the same PR (or to main) supersedes
+# the in-flight run for the old commit instead of both running to completion.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
