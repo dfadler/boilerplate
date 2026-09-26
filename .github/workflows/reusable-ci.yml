@@ -47,6 +47,21 @@ name: Reusable CI
 #       uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
 #       with:
 #         format: true
+#
+# The `test-coverage` job is opt-in (default off) — runs the consuming
+# repo's own `test:coverage` script (must emit `coverage/lcov.info`, e.g.
+# `vitest run --coverage`) and, on a pull_request, fails if the PR's *new or
+# changed* lines fall under `patch-coverage-threshold`. Deliberately not a
+# whole-repo coverage gate: that either blocks every PR forever in a repo
+# with historic low coverage or gets disabled outright, where a patch gate
+# ratchets quality up on new work only (ported from dfadler/dfadler.com's
+# test.yml):
+#   jobs:
+#     ci:
+#       uses: dfadler/boilerplate/.github/workflows/reusable-ci.yml@main
+#       with:
+#         test-coverage: true
+#         patch-coverage-threshold: 90 # optional, defaults to 90
 on:
   workflow_call:
     inputs:
@@ -70,6 +85,14 @@ on:
         description: "Run `pnpm format:check` (requires that script to exist)"
         type: boolean
         default: false
+      test-coverage:
+        description: "Run `pnpm test:coverage` and gate PRs on patch coverage (requires that script to emit coverage/lcov.info)"
+        type: boolean
+        default: false
+      patch-coverage-threshold:
+        description: "Minimum % coverage required on changed lines (test-coverage only)"
+        type: number
+        default: 90
 
 permissions:
   contents: read
@@ -169,3 +192,71 @@ jobs:
           node-version: ${{ inputs.node-version }}
 
       - run: pnpm format:check
+
+  test-coverage:
+    if: ${{ inputs.test-coverage }}
+    name: Patch coverage (diff-cover)
+    runs-on: ubuntu-latest
+    env:
+      # Pinned to an exact release; bump deliberately (doubles as the pip
+      # cache key below).
+      DIFF_COVER_VERSION: 10.5.1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # diff-cover diffs the PR against its base branch, so it needs full
+          # history for both — a shallow clone has no merge-base to diff from.
+          fetch-depth: 0
+          submodules: recursive
+          # This job runs PR-controlled code (the test suite) and never
+          # needs authenticated git after checkout — don't leave the
+          # GITHUB_TOKEN in reach.
+          persist-credentials: false
+
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - run: pnpm test:coverage
+
+      # Keep the full report even when the patch gate below fails, so a
+      # failing PR can still be inspected.
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: error
+
+      # pipx installs into its own venv (not pip's), but the wheel download
+      # still goes through pip's cache dir underneath — caching it keyed on
+      # DIFF_COVER_VERSION skips the download on every PR run instead of
+      # only within a single job.
+      - name: Cache pip packages (diff-cover)
+        if: github.event_name == 'pull_request'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/pip
+          key: pip-diffcover-${{ runner.os }}-${{ env.DIFF_COVER_VERSION }}
+
+      - name: Enforce patch coverage
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          THRESHOLD: ${{ inputs.patch-coverage-threshold }}
+        run: |
+          # origin/$BASE_REF is already present: the checkout above fetched
+          # all branches (fetch-depth: 0), and with persist-credentials:
+          # false a re-fetch here couldn't authenticate anyway.
+          # pipx is preinstalled on GitHub-hosted runners and sidesteps PEP
+          # 668 (Ubuntu's system Python is externally managed).
+          pipx install "diff-cover==${DIFF_COVER_VERSION}"
+          diff-cover coverage/lcov.info \
+            --compare-branch="origin/$BASE_REF" \
+            --fail-under="$THRESHOLD" \
+            --markdown-report=diff-cover.md
+
+      - name: Publish patch-coverage summary
+        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        run: cat diff-cover.md >> "$GITHUB_STEP_SUMMARY" || true
