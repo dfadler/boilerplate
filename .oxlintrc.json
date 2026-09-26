@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript"],
   "ignorePatterns": ["dist", "coverage", "node_modules"],
   "rules": {
     "no-unused-vars": [
@@ -10,6 +11,12 @@
         "varsIgnorePattern": "^_",
         "caughtErrorsIgnorePattern": "^_"
       }
-    ]
+    ],
+    "typescript/no-explicit-any": "error",
+    "typescript/consistent-type-assertions": [
+      "error",
+      { "assertionStyle": "never" }
+    ],
+    "typescript/no-non-null-assertion": "error"
   }
 }
