@@ -27,8 +27,12 @@ to this repo).
 - **`.github/`** — what this repo needs to run itself: its own CI (`ci.yml`,
   `issue-bot.yml`) and the reusable CI workflow other repos call
   (`reusable-ci.yml`) — GitHub requires reusable workflows to live directly in
-  `.github/workflows/`, so that one file is the exception living here for a
-  different repo's benefit, distinguished only by its `reusable-` prefix.
+  `.github/workflows/`, so that one is the exception living here for a
+  different repo's benefit, distinguished by its `reusable-` prefix.
+  `reusable-ci.yml` is a thin orchestrator: each check lives in its own
+  `ci-*.yml` reusable workflow (`ci-build.yml`, `ci-lint.yml`, etc.), also
+  required to live in `.github/workflows/` but not meant to be called
+  directly by a consuming repo.
 - **[`github/`](github/README.md)** — everything else meant for other repos to
   consume that isn't a workflow file: composite actions and copyable templates.
 

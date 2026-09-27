@@ -8,6 +8,18 @@ name: Reusable CI
 # (stub any that don't apply — same convention as this repo's own packages).
 # This repo's own ci.yml calls it too, so it's exercised on every PR here.
 #
+# This file is a thin orchestrator: each check lives in its own
+# .github/workflows/ci-*.yml reusable workflow (workflow_call only, not meant
+# to be called directly by a consuming repo), called here via a relative
+# path. A relative `uses: ./...` reference to a reusable workflow always
+# resolves to the same repository *and the same commit* as the file making
+# the reference — so a consuming repo pinned to reusable-ci.yml@<ref> gets
+# every ci-*.yml from that exact same ref too, never a newer or different one
+# (ported from dfadler/agent-config's shell.yml + sh-*.yml split). To add a
+# check: create .github/workflows/ci-<name>.yml with `on: workflow_call:`,
+# add a job here that calls it, and add that job's name to all-checks' needs:
+# — no consuming repo's branch-protection settings need to change.
+#
 # The `deadcode` job is opt-in (default off, so existing callers aren't
 # broken by a script they don't have) — enable it once the consuming repo
 # has its own `deadcode` script (e.g. `knip`):
@@ -168,338 +180,103 @@ permissions:
   contents: read
 
 jobs:
-  # build/lint/typecheck/test run as separate parallel jobs (rather than one
-  # job with four sequential steps) so a failure names itself directly in the
-  # PR checks panel — e.g. "ci / lint" red — instead of every failure showing
-  # as the same "ci / build" and requiring a log open to see which step broke
-  # (ported from dfadler/agent-config's shell.yml split). Each job pays for
-  # its own `turbo run` dependency-graph build (via each task's `^build` in
-  # turbo.json) independently since there's no cache shared between jobs;
-  # that's a deliberate simplicity-over-speed trade-off until a consuming
-  # repo's build step is slow enough to justify wiring up turbo remote
-  # caching or an actions/cache-backed .turbo dir.
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-          # This job only builds the checked-out code and never needs
-          # authenticated git — don't leave the GITHUB_TOKEN in reach.
-          persist-credentials: false
-
-      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
-        with:
-          node-version: ${{ inputs.node-version }}
-
-      - run: pnpm build
+    uses: ./.github/workflows/ci-build.yml
+    permissions:
+      contents: read
+    with:
+      node-version: ${{ inputs.node-version }}
 
   lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-          # This job only lints the checked-out code and never needs
-          # authenticated git — don't leave the GITHUB_TOKEN in reach.
-          persist-credentials: false
-
-      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
-        with:
-          node-version: ${{ inputs.node-version }}
-
-      - run: pnpm lint
+    uses: ./.github/workflows/ci-lint.yml
+    permissions:
+      contents: read
+    with:
+      node-version: ${{ inputs.node-version }}
 
   typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-          # This job only typechecks the checked-out code and never needs
-          # authenticated git — don't leave the GITHUB_TOKEN in reach.
-          persist-credentials: false
-
-      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
-        with:
-          node-version: ${{ inputs.node-version }}
-
-      - run: pnpm typecheck
+    uses: ./.github/workflows/ci-typecheck.yml
+    permissions:
+      contents: read
+    with:
+      node-version: ${{ inputs.node-version }}
 
   test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-          # This job only runs the checked-out test suite and never needs
-          # authenticated git — don't leave the GITHUB_TOKEN in reach.
-          persist-credentials: false
-
-      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
-        with:
-          node-version: ${{ inputs.node-version }}
-
-      - run: pnpm test
+    uses: ./.github/workflows/ci-test.yml
+    permissions:
+      contents: read
+    with:
+      node-version: ${{ inputs.node-version }}
 
   deadcode:
     if: ${{ inputs.deadcode }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-          # This job only reads the checked-out code and never needs
-          # authenticated git — don't leave the GITHUB_TOKEN in reach.
-          persist-credentials: false
-
-      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
-        with:
-          node-version: ${{ inputs.node-version }}
-
-      - run: pnpm deadcode
+    uses: ./.github/workflows/ci-deadcode.yml
+    permissions:
+      contents: read
+    with:
+      node-version: ${{ inputs.node-version }}
 
   actionlint:
     if: ${{ inputs.actionlint }}
-    runs-on: ubuntu-latest
-    env:
-      ACTIONLINT_VERSION: 1.7.12
-      ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # This job only reads the checked-out workflow files and never
-          # needs authenticated git — don't leave the GITHUB_TOKEN in reach.
-          persist-credentials: false
-
-      # Verified before extraction: piping curl into tar would run the
-      # unverified payload first and check it never.
-      - name: Install actionlint ${{ env.ACTIONLINT_VERSION }}
-        run: |
-          curl -fsSL -o /tmp/actionlint.tar.gz \
-            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
-          echo "${ACTIONLINT_SHA256}  /tmp/actionlint.tar.gz" | sha256sum -c -
-          tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
-          sudo install -m 0755 /tmp/actionlint /usr/local/bin/actionlint
-          rm -f /tmp/actionlint.tar.gz /tmp/actionlint
-          actionlint --version
-
-      - name: Install shellcheck
-        uses: dfadler/boilerplate/github/actions/install-shellcheck@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
-
-      - name: Lint workflows (actionlint)
-        run: actionlint
-
-      - name: Check workflow hygiene (concurrency, persist-credentials)
-        uses: dfadler/boilerplate/github/actions/check-workflow-hygiene@9bf8a4ad545d8f8863360445d88b4f75524761e9 # this PR
+    uses: ./.github/workflows/ci-actionlint.yml
+    permissions:
+      contents: read
 
   security-audit:
     if: ${{ inputs.security-audit }}
-    name: pnpm audit (prod, high+)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # This job runs PR-controlled code and never needs authenticated
-          # git after checkout — don't leave the GITHUB_TOKEN in reach.
-          persist-credentials: false
-
-      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
-        with:
-          node-version: ${{ inputs.node-version }}
-
-      # Fails (non-zero exit) on any high/critical prod advisory not listed
-      # in the consuming repo's pnpm-workspace.yaml `auditConfig.ignoreGhsas`.
-      - name: Audit production dependencies
-        run: pnpm audit --prod --audit-level=high
+    uses: ./.github/workflows/ci-security-audit.yml
+    permissions:
+      contents: read
+    with:
+      node-version: ${{ inputs.node-version }}
 
   format:
     if: ${{ inputs.format }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-          # This job only reads/formats the checked-out code and never needs
-          # authenticated git — don't leave the GITHUB_TOKEN in reach.
-          persist-credentials: false
-
-      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
-        with:
-          node-version: ${{ inputs.node-version }}
-
-      - run: pnpm format:check
+    uses: ./.github/workflows/ci-format.yml
+    permissions:
+      contents: read
+    with:
+      node-version: ${{ inputs.node-version }}
 
   test-coverage:
     if: ${{ inputs.test-coverage }}
-    name: Patch coverage (diff-cover)
-    runs-on: ubuntu-latest
-    env:
-      # Pinned to an exact release; bump deliberately (doubles as the pip
-      # cache key below).
-      DIFF_COVER_VERSION: 10.5.1
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # diff-cover diffs the PR against its base branch, so it needs full
-          # history for both — a shallow clone has no merge-base to diff from.
-          fetch-depth: 0
-          submodules: recursive
-          # This job runs PR-controlled code (the test suite) and never
-          # needs authenticated git after checkout — don't leave the
-          # GITHUB_TOKEN in reach.
-          persist-credentials: false
-
-      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
-        with:
-          node-version: ${{ inputs.node-version }}
-
-      - run: pnpm test:coverage
-
-      # Keep the full report even when the patch gate below fails, so a
-      # failing PR can still be inspected.
-      - name: Upload coverage report
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: coverage
-          path: coverage/
-          if-no-files-found: error
-
-      # pipx installs into its own venv (not pip's), but the wheel download
-      # still goes through pip's cache dir underneath — caching it keyed on
-      # DIFF_COVER_VERSION skips the download on every PR run instead of
-      # only within a single job.
-      - name: Cache pip packages (diff-cover)
-        if: github.event_name == 'pull_request'
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/pip
-          key: pip-diffcover-${{ runner.os }}-${{ env.DIFF_COVER_VERSION }}
-
-      - name: Enforce patch coverage
-        if: github.event_name == 'pull_request'
-        env:
-          BASE_REF: ${{ github.base_ref }}
-          THRESHOLD: ${{ inputs.patch-coverage-threshold }}
-        run: |
-          # origin/$BASE_REF is already present: the checkout above fetched
-          # all branches (fetch-depth: 0), and with persist-credentials:
-          # false a re-fetch here couldn't authenticate anyway.
-          # pipx is preinstalled on GitHub-hosted runners and sidesteps PEP
-          # 668 (Ubuntu's system Python is externally managed).
-          pipx install "diff-cover==${DIFF_COVER_VERSION}"
-          diff-cover coverage/lcov.info \
-            --compare-branch="origin/$BASE_REF" \
-            --fail-under="$THRESHOLD" \
-            --markdown-report=diff-cover.md
-
-      - name: Publish patch-coverage summary
-        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
-        run: cat diff-cover.md >> "$GITHUB_STEP_SUMMARY" || true
+    uses: ./.github/workflows/ci-test-coverage.yml
+    permissions:
+      contents: read
+    with:
+      node-version: ${{ inputs.node-version }}
+      patch-coverage-threshold: ${{ inputs.patch-coverage-threshold }}
 
   codeql:
     if: ${{ inputs.codeql }}
-    name: CodeQL (javascript-typescript)
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-codeql.yml
     permissions:
       contents: read
       actions: read
       security-events: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
-        with:
-          languages: javascript-typescript
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
-
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
 
   semgrep:
     if: ${{ inputs.semgrep }}
-    name: Semgrep SAST scan
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-semgrep.yml
     permissions:
-      contents: read # only checks out code and runs a local scan; no SARIF upload
-    container:
-      # Official Semgrep image, pinned to the 1.178.0 release's multi-arch
-      # manifest-list digest (not the mutable `latest` tag) so a later
-      # push to semgrep/semgrep can't silently change scanner behavior
-      # across runs of this same workflow revision. Bump deliberately:
-      # find the new digest via `docker manifest inspect semgrep/semgrep:<version>`
-      # or the registry API's Docker-Content-Digest header. Runs entirely
-      # against Semgrep's free, public rulesets (no SEMGREP_APP_TOKEN /
-      # Semgrep Cloud account needed).
-      image: semgrep/semgrep@sha256:32e459968daabe7ab86968184a29109b9564aa00392401156f9788452b42786b # 1.178.0
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      # --config auto pulls community rulesets keyed off the languages
-      # detected in the repo (no account/token needed). --error fails the
-      # build when findings are reported, rather than just logging them.
-      - name: Run Semgrep
-        run: semgrep scan --config auto --error
+      contents: read
 
   supply-chain-audit:
     if: ${{ inputs.supply-chain-audit }}
-    name: Safe Chain (pnpm install)
-    runs-on: ubuntu-latest
-    env:
-      # Pinned to an exact release + checksum — GitHub release assets are
-      # immutable, so this URL+hash pair can't change under us; bump both
-      # together to upgrade Safe Chain.
-      SAFE_CHAIN_VERSION: 1.5.15
-      SAFE_CHAIN_SHA256: de0565e3d6346407a604e84e639e95fea8758748063da2216bbfdca5feda5dd2
-      SAFE_CHAIN_MINIMUM_PACKAGE_AGE_EXCLUSIONS: ${{ inputs.safe-chain-age-exclusions }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # This job runs PR-controlled code and never needs authenticated
-          # git after checkout — don't leave the GITHUB_TOKEN in reach.
-          persist-credentials: false
-
-      # Hand-rolled setup instead of setup-pnpm-node: this job's whole
-      # purpose is to route package downloads through Safe Chain's proxy, so
-      # it needs a cold install that actually fetches — setup-pnpm-node's
-      # cached install would let a warm store skip the scan entirely.
-      - name: Install pnpm
-        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
-
-      - name: Install Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: ${{ inputs.node-version }}
-          # Deliberately no `cache: pnpm` — see above.
-
-      - name: Install Aikido Safe Chain
-        run: |
-          curl -fsSL "https://github.com/AikidoSec/safe-chain/releases/download/${SAFE_CHAIN_VERSION}/install-safe-chain.sh" -o /tmp/install-safe-chain.sh
-          echo "${SAFE_CHAIN_SHA256}  /tmp/install-safe-chain.sh" | sha256sum -c -
-          sh /tmp/install-safe-chain.sh --ci
-          rm /tmp/install-safe-chain.sh
-
-      # `pnpm` on PATH is now Safe Chain's shim. A frozen-lockfile install
-      # that resolves a package on Aikido's malware list exits non-zero,
-      # failing the check. On a clean tree this is a normal install.
-      - name: Install dependencies (malware-scanned)
-        run: pnpm install --frozen-lockfile
+    uses: ./.github/workflows/ci-supply-chain-audit.yml
+    permissions:
+      contents: read
+    with:
+      node-version: ${{ inputs.node-version }}
+      safe-chain-age-exclusions: ${{ inputs.safe-chain-age-exclusions }}
 
   # Sentinel for a consuming repo's branch protection: require only
   # "ci / all-checks" instead of every individual job name. Without this,
-  # enabling an opt-in job (or a future split like build/lint/typecheck/test)
-  # would require a branch-protection settings update in every consuming
-  # repo. if: always() is load-bearing — without it, a skipped opt-in job
-  # (the common case, since they default off) would skip this job too,
-  # vacuously passing the required check.
+  # enabling an opt-in job (or adding a new ci-*.yml check) would require a
+  # branch-protection settings update in every consuming repo. if: always()
+  # is load-bearing — without it, a skipped opt-in job (the common case,
+  # since they default off) would skip this job too, vacuously passing the
+  # required check.
   all-checks:
     name: all-checks
     runs-on: ubuntu-latest
