@@ -12,6 +12,11 @@ on:
   issue_comment:
     types: [created, edited]
 
+# concurrency: none — each run is a single, independent, idempotent
+# issue-file-or-dedup attempt for one comment event; two comments in flight
+# at once are unrelated work, and cancelling a run partway through an issue
+# creation is worse than letting two finish.
+
 jobs:
   issue-bot:
     permissions:
