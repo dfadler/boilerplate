@@ -1,0 +1,44 @@
+name: actionlint
+
+# concurrency: none — workflow_call only, never triggered directly; the
+# calling workflow's own concurrency group covers cancellation for this run.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: run
+    runs-on: ubuntu-latest
+    env:
+      ACTIONLINT_VERSION: 1.7.12
+      ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # This job only reads the checked-out workflow files and never
+          # needs authenticated git — don't leave the GITHUB_TOKEN in reach.
+          persist-credentials: false
+
+      # Verified before extraction: piping curl into tar would run the
+      # unverified payload first and check it never.
+      - name: Install actionlint ${{ env.ACTIONLINT_VERSION }}
+        run: |
+          curl -fsSL -o /tmp/actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          echo "${ACTIONLINT_SHA256}  /tmp/actionlint.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
+          sudo install -m 0755 /tmp/actionlint /usr/local/bin/actionlint
+          rm -f /tmp/actionlint.tar.gz /tmp/actionlint
+          actionlint --version
+
+      - name: Install shellcheck
+        uses: dfadler/boilerplate/github/actions/install-shellcheck@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
+
+      - name: Lint workflows (actionlint)
+        run: actionlint
+
+      - name: Check workflow hygiene (concurrency, persist-credentials)
+        uses: dfadler/boilerplate/github/actions/check-workflow-hygiene@9bf8a4ad545d8f8863360445d88b4f75524761e9 # this PR

@@ -1,0 +1,32 @@
+name: format
+
+# concurrency: none — workflow_call only, never triggered directly; the
+# calling workflow's own concurrency group covers cancellation for this run.
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version to use"
+        type: string
+        default: "22"
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          # This job only reads/formats the checked-out code and never needs
+          # authenticated git — don't leave the GITHUB_TOKEN in reach.
+          persist-credentials: false
+
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - run: pnpm format:check

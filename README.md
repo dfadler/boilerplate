@@ -27,8 +27,12 @@ to this repo).
 - **`.github/`** — what this repo needs to run itself: its own CI (`ci.yml`,
   `issue-bot.yml`) and the reusable CI workflow other repos call
   (`reusable-ci.yml`) — GitHub requires reusable workflows to live directly in
-  `.github/workflows/`, so that one file is the exception living here for a
-  different repo's benefit, distinguished only by its `reusable-` prefix.
+  `.github/workflows/`, so that one is the exception living here for a
+  different repo's benefit, distinguished by its `reusable-` prefix.
+  `reusable-ci.yml` is a thin orchestrator: each check lives in its own
+  `ci-*.yml` reusable workflow (`ci-build.yml`, `ci-lint.yml`, etc.), also
+  required to live in `.github/workflows/` but not meant to be called
+  directly by a consuming repo.
 - **[`github/`](github/README.md)** — everything else meant for other repos to
   consume that isn't a workflow file: composite actions and copyable templates.
 
@@ -63,6 +67,14 @@ jobs:
 It assumes a pnpm workspace with `build`/`lint`/`typecheck`/`test` scripts at the
 consuming repo's root (stub any that don't apply). This repo's own `ci.yml` calls
 the same reusable workflow, so it's exercised on every PR here too.
+
+`build`, `lint`, `typecheck`, and `test` run as separate parallel jobs rather
+than sequential steps in one job, so a failure names itself directly in the PR
+checks panel (e.g. "ci / lint") instead of every failure showing as the same
+"ci / build". An `all-checks` job gates on all of them (plus every opt-in job
+that's enabled) via `if: always()` — point a consuming repo's branch
+protection at **`ci / all-checks`** rather than individual job names, so
+enabling an opt-in job later never requires a settings update.
 
 Two more jobs are opt-in (default off, so existing callers aren't broken) and need
 nothing extra from the consuming repo — `actionlint` lints `.github/workflows/**`
