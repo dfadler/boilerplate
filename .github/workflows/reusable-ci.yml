@@ -350,9 +350,15 @@ jobs:
     permissions:
       contents: read # only checks out code and runs a local scan; no SARIF upload
     container:
-      # Official Semgrep image; runs entirely against Semgrep's free, public
-      # rulesets (no SEMGREP_APP_TOKEN / Semgrep Cloud account needed).
-      image: semgrep/semgrep
+      # Official Semgrep image, pinned to the 1.178.0 release's multi-arch
+      # manifest-list digest (not the mutable `latest` tag) so a later
+      # push to semgrep/semgrep can't silently change scanner behavior
+      # across runs of this same workflow revision. Bump deliberately:
+      # find the new digest via `docker manifest inspect semgrep/semgrep:<version>`
+      # or the registry API's Docker-Content-Digest header. Runs entirely
+      # against Semgrep's free, public rulesets (no SEMGREP_APP_TOKEN /
+      # Semgrep Cloud account needed).
+      image: semgrep/semgrep@sha256:32e459968daabe7ab86968184a29109b9564aa00392401156f9788452b42786b # 1.178.0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
