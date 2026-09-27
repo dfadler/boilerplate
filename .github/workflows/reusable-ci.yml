@@ -168,14 +168,24 @@ permissions:
   contents: read
 
 jobs:
+  # build/lint/typecheck/test run as separate parallel jobs (rather than one
+  # job with four sequential steps) so a failure names itself directly in the
+  # PR checks panel — e.g. "ci / lint" red — instead of every failure showing
+  # as the same "ci / build" and requiring a log open to see which step broke
+  # (ported from dfadler/agent-config's shell.yml split). Each job pays for
+  # its own `turbo run` dependency-graph build (via each task's `^build` in
+  # turbo.json) independently since there's no cache shared between jobs;
+  # that's a deliberate simplicity-over-speed trade-off until a consuming
+  # repo's build step is slow enough to justify wiring up turbo remote
+  # caching or an actions/cache-backed .turbo dir.
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
-          # This job only builds/lints/tests the checked-out code and never
-          # needs authenticated git — don't leave the GITHUB_TOKEN in reach.
+          # This job only builds the checked-out code and never needs
+          # authenticated git — don't leave the GITHUB_TOKEN in reach.
           persist-credentials: false
 
       - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
@@ -183,8 +193,53 @@ jobs:
           node-version: ${{ inputs.node-version }}
 
       - run: pnpm build
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          # This job only lints the checked-out code and never needs
+          # authenticated git — don't leave the GITHUB_TOKEN in reach.
+          persist-credentials: false
+
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
+        with:
+          node-version: ${{ inputs.node-version }}
+
       - run: pnpm lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          # This job only typechecks the checked-out code and never needs
+          # authenticated git — don't leave the GITHUB_TOKEN in reach.
+          persist-credentials: false
+
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
+        with:
+          node-version: ${{ inputs.node-version }}
+
       - run: pnpm typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          # This job only runs the checked-out test suite and never needs
+          # authenticated git — don't leave the GITHUB_TOKEN in reach.
+          persist-credentials: false
+
+      - uses: dfadler/boilerplate/github/actions/setup-pnpm-node@23b8697a19fcdfe61808e2c3e32a85e0092970fe # dfadler/boilerplate#20
+        with:
+          node-version: ${{ inputs.node-version }}
+
       - run: pnpm test
 
   deadcode:
@@ -437,3 +492,35 @@ jobs:
       # failing the check. On a clean tree this is a normal install.
       - name: Install dependencies (malware-scanned)
         run: pnpm install --frozen-lockfile
+
+  # Sentinel for a consuming repo's branch protection: require only
+  # "ci / all-checks" instead of every individual job name. Without this,
+  # enabling an opt-in job (or a future split like build/lint/typecheck/test)
+  # would require a branch-protection settings update in every consuming
+  # repo. if: always() is load-bearing — without it, a skipped opt-in job
+  # (the common case, since they default off) would skip this job too,
+  # vacuously passing the required check.
+  all-checks:
+    name: all-checks
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      [
+        build,
+        lint,
+        typecheck,
+        test,
+        deadcode,
+        actionlint,
+        security-audit,
+        format,
+        test-coverage,
+        codeql,
+        semgrep,
+        supply-chain-audit,
+      ]
+    steps:
+      - name: All checks passed
+        run: |
+          results="${{ join(needs.*.result, ' ') }}"
+          [[ "$results" =~ failure|cancelled ]] && exit 1 || exit 0

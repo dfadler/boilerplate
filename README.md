@@ -64,6 +64,14 @@ It assumes a pnpm workspace with `build`/`lint`/`typecheck`/`test` scripts at th
 consuming repo's root (stub any that don't apply). This repo's own `ci.yml` calls
 the same reusable workflow, so it's exercised on every PR here too.
 
+`build`, `lint`, `typecheck`, and `test` run as separate parallel jobs rather
+than sequential steps in one job, so a failure names itself directly in the PR
+checks panel (e.g. "ci / lint") instead of every failure showing as the same
+"ci / build". An `all-checks` job gates on all of them (plus every opt-in job
+that's enabled) via `if: always()` — point a consuming repo's branch
+protection at **`ci / all-checks`** rather than individual job names, so
+enabling an opt-in job later never requires a settings update.
+
 Two more jobs are opt-in (default off, so existing callers aren't broken) and need
 nothing extra from the consuming repo — `actionlint` lints `.github/workflows/**`
 with [actionlint](https://github.com/rhysd/actionlint) and shellcheck; `security-audit`
