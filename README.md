@@ -36,6 +36,33 @@ to this repo).
 - **[`github/`](github/README.md)** — everything else meant for other repos to
   consume that isn't a workflow file: composite actions and copyable templates.
 
+## Filing issues from PR comments (issue-bot)
+
+`.github/workflows/issue-bot.yml` wires up [dfadler/issue-bot](https://github.com/dfadler/issue-bot).
+Mention `@issue-bot` in a PR review comment or conversation comment and it files
+a standalone issue with the comment, the related diff hunk, the thread, and a
+backlink. It is deterministic (no AI), and dedups by backlink, so re-editing a
+comment won't file a second issue.
+
+- **Who can trigger it:** `OWNER`, `MEMBER`, or `COLLABORATOR` only. Bot
+  comments are ignored.
+- **Where:** PRs only. To also act on plain issue comments, pass
+  `allow-plain-issues: "true"` under `with:`.
+- **Cost guard:** the reusable workflow gates the job with an `if:`, so
+  non-matching comments never boot a runner.
+- **Keep the pin current:** `uses:` and `with.ref` are both pinned to a commit
+  SHA. The action's `version-check` defaults to `fail`, so a stale pin fails the
+  run. Bump both lines together to the SHA in the
+  [latest release](https://github.com/dfadler/issue-bot/releases).
+  [.github/dependabot.yml](.github/dependabot.yml) opens a PR for the `uses:`
+  line, but Dependabot doesn't touch `with.ref`, so copy the new SHA there
+  yourself before merging. `issue_comment` events always run the default
+  branch's current workflow, but `pull_request_review_comment` events use a
+  snapshot tied to the PR, so PRs opened before a re-pin keep the old workflow
+  for review comments until the default branch is merged into them.
+- **In a project made from this template:** keep `issue-bot.yml` to get the
+  behavior, or delete it if you don't want it.
+
 ## Consuming shared config from an existing repo
 
 No config here is published to npm. An existing repo picks up `tsconfig.base.json`
