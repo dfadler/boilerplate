@@ -1,0 +1,9 @@
+version: 2
+updates:
+  # Tracks SHA-pinned actions and reusable workflows in .github/workflows/.
+  # Dependabot does not update `with: ref:` inputs, so on an issue-bot bump,
+  # re-sync `with.ref` in issue-bot.yml to the new `uses:` SHA by hand.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

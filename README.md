@@ -53,7 +53,10 @@ comment won't file a second issue.
 - **Keep the pin current:** `uses:` and `with.ref` are both pinned to a commit
   SHA. The action's `version-check` defaults to `fail`, so a stale pin fails the
   run. Bump both lines together to the SHA in the
-  [latest release](https://github.com/dfadler/issue-bot/releases). PRs opened
+  [latest release](https://github.com/dfadler/issue-bot/releases).
+  [.github/dependabot.yml](.github/dependabot.yml) opens a PR for the `uses:`
+  line, but Dependabot doesn't touch `with.ref`, so copy the new SHA there
+  yourself before merging. PRs opened
   before a re-pin keep the old workflow until the default branch is merged into
   them.
 - **In a project made from this template:** keep `issue-bot.yml` to get the
