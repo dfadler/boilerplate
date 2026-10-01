@@ -56,9 +56,10 @@ comment won't file a second issue.
   [latest release](https://github.com/dfadler/issue-bot/releases).
   [.github/dependabot.yml](.github/dependabot.yml) opens a PR for the `uses:`
   line, but Dependabot doesn't touch `with.ref`, so copy the new SHA there
-  yourself before merging. PRs opened
-  before a re-pin keep the old workflow until the default branch is merged into
-  them.
+  yourself before merging. `issue_comment` events always run the default
+  branch's current workflow, but `pull_request_review_comment` events use a
+  snapshot tied to the PR, so PRs opened before a re-pin keep the old workflow
+  for review comments until the default branch is merged into them.
 - **In a project made from this template:** keep `issue-bot.yml` to get the
   behavior, or delete it if you don't want it.
 
