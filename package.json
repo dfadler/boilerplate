@@ -12,6 +12,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "turbo run lint",
+    "lint:actions": "bash github/actions/check-workflow-hygiene/check-workflow-concurrency.sh && bash github/actions/check-workflow-hygiene/check-persist-credentials.sh",
+    "lint:sh": "find github -name '*.sh' -exec shellcheck {} + && find github -name '*.sh' -exec shfmt -i 2 -ci -d {} +",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck"
   },

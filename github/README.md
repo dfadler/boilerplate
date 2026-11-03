@@ -23,9 +23,11 @@ GitHub requires to live in `.github/workflows/`).
 
 - **`templates/`** — files a new repo copies in rather than references live (a starting
   PR template, `dependabot.yml`, etc.). Copy, don't symlink or submodule — a template is
-  a starting point a project is expected to diverge from. Doesn't exist yet — create it
-  when the first template actually lands, rather than scaffolding an empty folder ahead
-  of content.
+  a starting point a project is expected to diverge from.
+
+  Currently ships:
+  - `templates/dependabot.yml` — weekly, grouped, 7-day cooldown; copy to `.github/dependabot.yml`.
+  - `templates/PULL_REQUEST_TEMPLATE.md` — copy to `.github/PULL_REQUEST_TEMPLATE.md`.
 
 Reusable **workflows** (`reusable-ci.yml` and any future ones) are the one exception:
 GitHub requires them to live directly in `.github/workflows/`, with no subdirectories

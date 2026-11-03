@@ -1,0 +1,5 @@
+# Gitignored files copied into every new Claude Code worktree (gitignore syntax).
+# node_modules is deliberately not symlinked from the main checkout: pnpm purges
+# and reinstalls it, through the link, when the workspace path differs.
+.env
+.env.local
