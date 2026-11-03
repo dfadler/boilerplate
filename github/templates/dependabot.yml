@@ -1,0 +1,27 @@
+# Copy to .github/dependabot.yml. Weekly, grouped, with a 7-day cooldown so a
+# freshly published (possibly malicious) version isn't proposed immediately.
+# Cooldown only throttles routine version updates, not security updates.
+version: 2
+updates:
+  - package-ecosystem: npm # reads pnpm-lock.yaml
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  # Tracks SHA-pinned actions and reusable workflows. List each composite
+  # action's directory explicitly (e.g. /.github/actions/<name>); Dependabot
+  # does not recurse into them from `/`.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]

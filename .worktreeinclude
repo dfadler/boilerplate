@@ -1,0 +1,4 @@
+# Gitignored files copied into every new Claude Code worktree (gitignore syntax).
+# node_modules is symlinked instead, via .claude/settings.json.
+.env
+.env.local
