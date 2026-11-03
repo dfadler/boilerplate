@@ -1,7 +1,4 @@
 {
-  "worktree": {
-    "symlinkDirectories": ["node_modules"]
-  },
   "permissions": {
     "ask": [
       "Bash(gh pr create *)",
